@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Regional Map</title>
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.js"></script>
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.4.2/mapbox-gl-geocoder.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.4.2/mapbox-gl-geocoder.css"
+      type="text/css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.min.js"></script>
+    <style>
+      .mapboxgl-popup {
+        max-width: 400px;
+        font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
+      }
+      .legend {
+        background-color: #fff;
+        border-radius: 3px;
+        bottom: 60px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
+        padding: 10px;
+        position: absolute;
+        right: 10px;
+        z-index: 1;
+      }
+
+      .legend h4 {
+        margin: 0 0 10px;
+      }
+
+      .legend div span {
+        border-radius: 50%;
+        display: inline-block;
+        height: 15px;
+        margin-right: 5px;
+        width: 15px;
+      }
+
+      .CensusInfo {
+        font-family: sans-serif;
+        margin-top: 5px;
+        margin-left: 5px;
+        padding: 5px;
+        width: 40%;
+        border: 2px solid black;
+        font-size: 18px;
+        color: #222;
+        background-color: #fff;
+        border-radius: 3px;
+        position: absolute;
+        right: 210px;
+        bottom: 60px;
+      }
+    </style>
+    <style>
+      .info-box {
+        height: 100px;
+        width: 150px;
+        position: absolute;
+        top: 57px;
+        right: 59px;
+        background-color: rgba(255, 255, 255, .9);
+        padding: 15px;
+        text-align: left;
+        font-family: 'Arial';
+        margin: 0;
+        font-size: 13px;
+      }
+    </style>
+    <div id="map"></div>
+    <div id="Regions" class="legend">
+      <h4>Regions</h4>
+      <div><span style="background-color: rgb(238, 238, 41)"></span>West</div>
+      <div><span style="background-color: rgb(150, 27, 150)"></span>North</div>
+      <div>
+        <span style="background-color: rgb(63, 150, 191)"></span>Central
+      </div>
+      <div><span style="background-color: rgb(18, 215, 18)"></span>East</div>
+      <div>
+        <span style="background-color: rgb(25, 27, 150)"></span>GTA and
+        Surrounding Areas
+      </div>
+    </div>
+    </div>
+    <div class="CensusInfo">
+      <div><strong>Census Division:</strong> <span id="CD"></span></div>
+    </div>
+    <script>
+      mapboxgl.accessToken =
+        "pk.eyJ1IjoiZXJpY2hudWc0MjYiLCJhIjoiY2syM2EwcGl5MG16NjNsb3h5YThod3JmcCJ9.gSYekVmL1ULC4E3YsNgkkQ";
+      var map = new mapboxgl.Map({
+        container: "map",
+        style: 'mapbox://styles/erichnug426/ckc6pb9711i0d1imsz8qtlca9',
+        center: [-84, 49],
+        zoom: 4.5
+      });
+      var censusname = document.getElementById("CD");
+      var popup = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false
+      });
+      map.addControl(
+        new MapboxGeocoder({
+          accessToken: mapboxgl.accessToken,
+          mapboxgl: mapboxgl
+        }),
+        "top-right"
+      );
+      map.addControl(new mapboxgl.NavigationControl());
+      map.on("load", function() {
+        // Add a new source from our GeoJSON data and
+        // set the 'cluster' option to true. GL-JS will
+        // add the point_count property to your source data.
+        var layers = map.getStyle().layers;
+
+        var labels;
+        for (var i = 0; i < layers.length; i++) {
+          if (layers[i].type === "symbol") {
+            labels = layers[i].id;
+            break;
+          }
+        }
+
+       
+        map.addLayer(
+          {
+            id: "CDNAME",
+            type: "fill",
+            source: {
+              type: "vector",
+              url: "mapbox://erichnug426.bvnvwgq1"
+            },
+            "source-layer": "lcd_000b16a_e_4-7nu7yv",
+
+            paint: {
+              "fill-color": "rgba(0, 0, 0, 00)",
+              "fill-outline-color": "rgba(0, 0, 0, 0)"
+            },
+            filter: ["==", "PRUID", "35"]
+          },
+          labels
+        );
+        map.addLayer(
+          {
+            id: "west",
+            type: "fill",
+            source: {
+              type: "vector",
+              url: "mapbox://erichnug426.bvnvwgq1"
+            },
+            "source-layer": "lcd_000b16a_e_4-7nu7yv",
+
+            paint: {
+              "fill-color": "rgb(238, 238, 41)",
+              "fill-outline-color": "rgba(0, 0, 0, 1)",
+              "fill-opacity": 0.7
+            },
+
+            filter: [
+              "any",
+              ["==", "CDUID", "3523"],
+              ["==", "CDUID", "3528"],
+              ["==", "CDUID", "3529"],
+              ["==", "CDUID", "3531"],
+              ["==", "CDUID", "3532"],
+              ["==", "CDUID", "3534"],
+              ["==", "CDUID", "3536"],
+              ["==", "CDUID", "3537"],
+              ["==", "CDUID", "3538"],
+              ["==", "CDUID", "3539"],
+              ["==", "CDUID", "3540"],
+              ["==", "CDUID", "3541"],
+              ["==", "CDUID", "3542"]
+            ]
+          },
+          labels
+        );
+        map.addLayer(
+          {
+            id: "north",
+            type: "fill",
+            source: {
+              type: "vector",
+              url: "mapbox://erichnug426.bvnvwgq1"
+            },
+            "source-layer": "lcd_000b16a_e_4-7nu7yv",
+
+            paint: {
+              "fill-color": "rgb(150, 27, 150)",
+              "fill-outline-color": "rgba(0, 0, 0, 1)",
+              "fill-opacity": 0.7
+            },
+
+            filter: [
+              "any",
+              ["==", "CDUID", "3548"],
+              ["==", "CDUID", "3549"],
+              ["==", "CDUID", "3551"],
+              ["==", "CDUID", "3552"],
+              ["==", "CDUID", "3553"],
+              ["==", "CDUID", "3554"],
+              ["==", "CDUID", "3556"],
+              ["==", "CDUID", "3557"],
+              ["==", "CDUID", "3558"],
+              ["==", "CDUID", "3559"],
+              ["==", "CDUID", "3560"]
+            ]
+          },
+          labels
+        );
+        map.addLayer(
+          {
+            id: "HSD",
+            type: "fill",
+            source: {
+              type: "vector",
+              url: "mapbox://erichnug426.bvnvwgq1"
+            },
+            "source-layer": "lcd_000b16a_e_4-7nu7yv",
+
+            paint: {
+              "fill-color": "rgb(25, 27, 150)",
+              "fill-outline-color": "rgba(0, 0, 0, 1)",
+              "fill-opacity": 0.85
+            },
+
+            filter: [
+              "any",
+              ["==", "CDUID", "3518"],
+              ["==", "CDUID", "3519"],
+              ["==", "CDUID", "3520"],
+              ["==", "CDUID", "3521"],
+              ["==", "CDUID", "3524"],
+              ["==", "CDUID", "3525"],
+              ["==", "CDUID", "3526"],
+              ["==", "CDUID", "3530"]
+            ]
+          },
+          labels
+        );
+
+        map.addLayer(
+          {
+            id: "central",
+            type: "fill",
+            source: {
+              type: "vector",
+              url: "mapbox://erichnug426.bvnvwgq1"
+            },
+            "source-layer": "lcd_000b16a_e_4-7nu7yv",
+
+            paint: {
+              "fill-color": "rgb(63, 150, 191)",
+              "fill-outline-color": "rgba(0, 0, 0, 1)",
+              "fill-opacity": 0.7
+            },
+
+            filter: [
+              "any",
+              ["==", "CDUID", "3514"],
+              ["==", "CDUID", "3515"],
+              ["==", "CDUID", "3516"],
+              ["==", "CDUID", "3522"],
+              ["==", "CDUID", "3543"],
+              ["==", "CDUID", "3544"],
+              ["==", "CDUID", "3546"]
+            ]
+          },
+          labels
+        );
+
+        map.addLayer(
+          {
+            id: "east",
+            type: "fill",
+            source: {
+              type: "vector",
+              url: "mapbox://erichnug426.bvnvwgq1"
+            },
+            "source-layer": "lcd_000b16a_e_4-7nu7yv",
+
+            paint: {
+              "fill-color": "rgb(18, 215, 18)",
+              "fill-outline-color": "rgba(0, 0, 0, 1)",
+              "fill-opacity": 0.5
+            },
+
+            filter: [
+              "any",
+              ["==", "CDUID", "3501"],
+              ["==", "CDUID", "3502"],
+              ["==", "CDUID", "3506"],
+              ["==", "CDUID", "3507"],
+              ["==", "CDUID", "3509"],
+              ["==", "CDUID", "3510"],
+              ["==", "CDUID", "3511"],
+              ["==", "CDUID", "3512"],
+              ["==", "CDUID", "3513"],
+              ["==", "CDUID", "3547"]
+            ]
+          },
+          labels
+        );
+
+
+        map.on("mousemove", "CDNAME", function(e) {
+            popup.setHTML(
+              "<p>" +
+                "Census Division:  " +
+                e.features[0].properties.CDNAME +
+                "</p>"
+            );
+            if (e.features.length > 0) {
+              censusname.textContent = e.features[0].properties.CDNAME;
+            }
+          });
+      });
+    </script>
+  </body>
+</html>

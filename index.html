@@ -35,6 +35,23 @@
     <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.min.js"></script>
     <style>
+      #menu {
+        position: absolute;
+        background: #efefef;
+        padding: 10px;
+        font-family: "Open Sans", sans-serif;
+      }
+    </style>
+    <style>
+      #menu2 {
+        position: absolute;
+        top: 40px;
+        background: #efefef;
+        padding: 10px;
+        font-family: "Open Sans", sans-serif;
+      }
+    </style>
+    <style>
       .mapboxgl-popup {
         max-width: 400px;
         font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
@@ -75,7 +92,7 @@
         background-color: #fff;
         border-radius: 3px;
         position: absolute;
-        right: 210px;
+        right: 700px;
         bottom: 60px;
       }
     </style>
@@ -86,60 +103,99 @@
         position: absolute;
         top: 57px;
         right: 59px;
-        background-color: rgba(255, 255, 255, .9);
+        background-color: rgba(255, 255, 255, 0.9);
         padding: 15px;
         text-align: left;
-        font-family: 'Arial';
+        font-family: "Arial";
         margin: 0;
         font-size: 13px;
       }
     </style>
+
     <div id="map"></div>
+    <form>
+      <div id="menu">
+        <input
+          id="Current"
+          type="radio"
+          name="rtoggle"
+          value="Current"
+          checked="checked"
+        />
+        <label for="Current">Current</label>
+        <input id="Interim" type="radio" name="rtoggle" value="light" />
+        <label for="light-v10">Interim</label>
+      </div>
+    </form>
+    <form>
+      <div id="menu2">
+        <input
+          id="Interactive"
+          type="radio"
+          name="dtoggle"
+          value="Interactive"
+          checked="checked"
+        />
+        <label for="Interactive">Interactive</label>
+        <input id="Screenshot" type="radio" name="dtoggle" value="Screenshot" />
+        <label for="Screenshot">Screenshot</label>
+      </div>
+    </form>
     <div id="Regions" class="legend">
       <h4>Regions</h4>
-      <div><span style="background-color: rgb(238, 238, 41)"></span>West</div>
-      <div><span style="background-color: rgb(150, 27, 150)"></span>North</div>
+      <div><span style="background-color: rgb(238, 238, 41);"></span>West</div>
+      <div><span style="background-color: rgb(150, 27, 150);"></span>North</div>
       <div>
-        <span style="background-color: rgb(63, 150, 191)"></span>Central
+        <span style="background-color: rgb(63, 150, 191);"></span>Central
       </div>
-      <div><span style="background-color: rgb(18, 215, 18)"></span>East</div>
+      <div><span style="background-color: rgb(18, 215, 18);"></span>East</div>
       <div>
-        <span style="background-color: rgb(25, 27, 150)"></span>GTA and
+        <span style="background-color: rgb(25, 27, 150);"></span>GTA and
         Surrounding Areas
       </div>
     </div>
+    <div id="InterimCoverage" class="legend">
+      <h4>Regions</h4>
+      <div>
+        <span style="background-color: rgb(255, 0, 0);"></span>Interim
+        Provincial Coverage
+      </div>
     </div>
-    <div class="CensusInfo">
-      <div><strong>Census Division:</strong> <span id="CD"></span></div>
+    <div id="CensusBox" class="CensusInfo">
+      <div>
+        <strong>Census Division/Municipality:</strong> <span id="CD"></span>
+      </div>
     </div>
     <script>
+      var xx = document.getElementById("InterimCoverage");
+      var zz = document.getElementById("CensusBox");
+      xx.style.display = "none";
       mapboxgl.accessToken =
         "pk.eyJ1IjoiZXJpY2hudWc0MjYiLCJhIjoiY2syM2EwcGl5MG16NjNsb3h5YThod3JmcCJ9.gSYekVmL1ULC4E3YsNgkkQ";
       var map = new mapboxgl.Map({
         container: "map",
-        style: 'mapbox://styles/erichnug426/ckc6pb9711i0d1imsz8qtlca9',
+        style: "mapbox://styles/erichnug426/ckc6pb9711i0d1imsz8qtlca9",
         center: [-84, 49],
         zoom: 4.5
       });
+
       var censusname = document.getElementById("CD");
       var popup = new mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false
       });
-      map.addControl(
-        new MapboxGeocoder({
-          accessToken: mapboxgl.accessToken,
-          mapboxgl: mapboxgl
-        }),
-        "top-right"
-      );
-      map.addControl(new mapboxgl.NavigationControl());
-      map.on("load", function() {
+      var geocoder = new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        mapboxgl: mapboxgl
+      });
+      var navigation = new mapboxgl.NavigationControl();
+      map.addControl(geocoder, "top-right");
+      map.addControl(navigation);
+      map.on("load", function () {
         // Add a new source from our GeoJSON data and
         // set the 'cluster' option to true. GL-JS will
         // add the point_count property to your source data.
         var layers = map.getStyle().layers;
-
         var labels;
         for (var i = 0; i < layers.length; i++) {
           if (layers[i].type === "symbol") {
@@ -147,23 +203,131 @@
             break;
           }
         }
+        map.addSource("Locations", {
+          type: "geojson",
+          data:
+            "https://dl.dropbox.com/s/ysj2hsxa54zlab8/TB%20Locations.geojson?dl=0"
+        });
 
-       
+        map.addLayer({
+          id: "Inspectors",
+          type: "circle",
+          source: "Locations",
+          paint: {
+            "circle-color": "#000000",
+            "circle-radius": 4,
+            "circle-stroke-width": 1
+          }
+        });
+
         map.addLayer(
           {
             id: "CDNAME",
             type: "fill",
             source: {
               type: "vector",
-              url: "mapbox://erichnug426.bvnvwgq1"
+              url: "mapbox://erichnug426.1fklfof9"
             },
-            "source-layer": "lcd_000b16a_e_4-7nu7yv",
+            "source-layer": "Ottawa_Edit_Final-902jhy",
 
             paint: {
-              "fill-color": "rgba(0, 0, 0, 00)",
-              "fill-outline-color": "rgba(0, 0, 0, 0)"
+              "fill-color": "rgba(0, 0, 0, 0)",
+              "fill-outline-color": "rgba(1, 1, 1, 1)"
             },
             filter: ["==", "PRUID", "35"]
+          },
+          labels
+        );
+
+        map.addLayer(
+          {
+            id: "InterimLayer",
+            type: "fill",
+            source: {
+              type: "vector",
+              url: "mapbox://erichnug426.5x2npcl7"
+            },
+            "source-layer": "MUNICIPAL_BOUNDARY_LOWER_AND_-cczxlg",
+
+            paint: {
+              "fill-color": "rgb(255, 0, 0)",
+              "fill-outline-color": "rgba(0, 0, 0, 1)",
+              "fill-opacity": 0
+            },
+
+            filter: [
+              "any",
+              ["==", "MUNID", 6005],
+              ["==", "MUNID", 9030],
+              ["==", "MUNID", 9024],
+              ["==", "MUNID", 9001],
+              ["==", "MUNID", 9033],
+              ["==", "MUNID", 9007],
+              ["==", "MUNID", 9010],
+              ["==", "MUNID", 48069],
+              ["==", "MUNID", 48050],
+              ["==", "MUNID", 48044],
+              ["==", "MUNID", 49066],
+              ["==", "MUNID", 85606],
+              ["==", "MUNID", 48031],
+              ["==", "MUNID", 85602],
+              ["==", "MUNID", 48022],
+              ["==", "MUNID", 48019],
+              ["==", "MUNID", 48017],
+              ["==", "MUNID", 49005],
+              ["==", "MUNID", 49039],
+              ["==", "MUNID", 49054],
+              ["==", "MUNID", 49036],
+              ["==", "MUNID", 49031],
+              ["==", "MUNID", 49028],
+              ["==", "MUNID", 49041],
+              ["==", "MUNID", 49024],
+              ["==", "MUNID", 49046],
+              ["==", "MUNID", 49051],
+              ["==", "MUNID", 49019],
+              ["==", "MUNID", 49018],
+              ["==", "MUNID", 49003],
+              ["==", "MUNID", 49012],
+              ["==", "MUNID", 49014],
+              ["==", "MUNID", 44065],
+              ["==", "MUNID", 44053],
+              ["==", "MUNID", 44042],
+              ["==", "MUNID", 44027],
+              ["==", "MUNID", 44018],
+              ["==", "MUNID", 44002],
+              ["==", "MUNID", 43080],
+              ["==", "MUNID", 46020],
+              ["==", "MUNID", 46011],
+              ["==", "MUNID", 48001],
+              ["==", "MUNID", 46002],
+              ["==", "MUNID", 43050],
+              ["==", "MUNID", 18039],
+              ["==", "MUNID", 19070],
+              ["==", "MUNID", 43042],
+              ["==", "MUNID", 43017],
+              ["==", "MUNID", 43040],
+              ["==", "MUNID", 43021],
+              ["==", "MUNID", 43013],
+              ["==", "MUNID", 19054],
+              ["==", "MUNID", 19049],
+              ["==", "MUNID", 18029],
+              ["==", "MUNID", 18020],
+              ["==", "MUNID", 19044],
+              ["==", "MUNID", 19048],
+              ["==", "MUNID", 19046],
+              ["==", "MUNID", 19038],
+              ["==", "MUNID", 19036],
+              ["==", "MUNID", 19028],
+              ["==", "MUNID", 21024],
+              ["==", "MUNID", 21010],
+              ["==", "MUNID", 21005],
+              ["==", "MUNID", 20002],
+              ["==", "MUNID", 18001],
+              ["==", "MUNID", 18005],
+              ["==", "MUNID", 18009],
+              ["==", "MUNID", 18013],
+              ["==", "MUNID", 18017]
+            ]
           },
           labels
         );
@@ -173,9 +337,9 @@
             type: "fill",
             source: {
               type: "vector",
-              url: "mapbox://erichnug426.bvnvwgq1"
+              url: "mapbox://erichnug426.1fklfof9"
             },
-            "source-layer": "lcd_000b16a_e_4-7nu7yv",
+            "source-layer": "Ottawa_Edit_Final-902jhy",
 
             paint: {
               "fill-color": "rgb(238, 238, 41)",
@@ -208,9 +372,9 @@
             type: "fill",
             source: {
               type: "vector",
-              url: "mapbox://erichnug426.bvnvwgq1"
+              url: "mapbox://erichnug426.1fklfof9"
             },
-            "source-layer": "lcd_000b16a_e_4-7nu7yv",
+            "source-layer": "Ottawa_Edit_Final-902jhy",
 
             paint: {
               "fill-color": "rgb(150, 27, 150)",
@@ -241,9 +405,9 @@
             type: "fill",
             source: {
               type: "vector",
-              url: "mapbox://erichnug426.bvnvwgq1"
+              url: "mapbox://erichnug426.1fklfof9"
             },
-            "source-layer": "lcd_000b16a_e_4-7nu7yv",
+            "source-layer": "Ottawa_Edit_Final-902jhy",
 
             paint: {
               "fill-color": "rgb(25, 27, 150)",
@@ -272,9 +436,9 @@
             type: "fill",
             source: {
               type: "vector",
-              url: "mapbox://erichnug426.bvnvwgq1"
+              url: "mapbox://erichnug426.1fklfof9"
             },
-            "source-layer": "lcd_000b16a_e_4-7nu7yv",
+            "source-layer": "Ottawa_Edit_Final-902jhy",
 
             paint: {
               "fill-color": "rgb(63, 150, 191)",
@@ -302,9 +466,9 @@
             type: "fill",
             source: {
               type: "vector",
-              url: "mapbox://erichnug426.bvnvwgq1"
+              url: "mapbox://erichnug426.1fklfof9"
             },
-            "source-layer": "lcd_000b16a_e_4-7nu7yv",
+            "source-layer": "Ottawa_Edit_Final-902jhy",
 
             paint: {
               "fill-color": "rgb(18, 215, 18)",
@@ -328,20 +492,161 @@
           },
           labels
         );
+      });
+      var layerList = document.getElementById("menu");
+      var layerList2 = document.getElementById("menu2");
+      var inputs = layerList.getElementsByTagName("input");
+      var inputs2 = layerList2.getElementsByTagName("input");
+      function cdname(e) {
+        popup.setHTML(
+          "<p>" +
+            "Census Division:  " +
+            e.features[0].properties.CDNAME +
+            "</p>"
+        );
+        if (e.features.length > 0) {
+          censusname.textContent = e.features[0].properties.CDNAME;
+        }
+      }
 
+      function munname(e) {
+        popup.setHTML(
+          "<p>" +
+            "Municipality:  " +
+            e.features[0].properties.LEGAL_NAME +
+            "</p>"
+        );
+        if (e.features.length > 0) {
+          censusname.textContent = e.features[0].properties.LEGAL_NAME;
+        }
+      }
+      function CDmouse(e) {
+        map.on("mouseenter", "CDNAME", function (e) {
+          map.getCanvas().style.cursor = "pointer";
+          map.on("mousedown", function (e) {
+            map.getCanvas().style.cursor = "pointer";
+          });
+          map.on("mouseleave", "CDNAME", function (e) {
+            popup.remove();
+            map.getCanvas().style.cursor = "grab";
+            censusname.textContent = null;
+            map.on("mousedown", function (e) {
+              map.getCanvas().style.cursor = "grabbing";
+            });
+            map.on("mouseup", function (e) {
+              map.getCanvas().style.cursor = "pointer";
+            });
+          });
+        });
+      }
+      function munname(e) {
+        popup.setHTML(
+          "<p>" +
+            "Municipality:  " +
+            e.features[0].properties.LEGAL_NAME +
+            "</p>"
+        );
+        if (e.features.length > 0) {
+          censusname.textContent = e.features[0].properties.LEGAL_NAME;
+        }
+      }
+      function MUNmouse(e) {
+        map.on("mouseenter", "InterimLayer", function (e) {
+          map.getCanvas().style.cursor = "pointer";
+          map.on("mousedown", function (e) {
+            map.getCanvas().style.cursor = "pointer";
+          });
+          map.on("mouseleave", "InterimLayer", function (e) {
+            popup.remove();
+            map.getCanvas().style.cursor = "grab";
+            censusname.textContent = null;
+            map.on("mousedown", function (e) {
+              map.getCanvas().style.cursor = "grabbing";
+            });
+            map.on("mouseup", function (e) {
+              map.getCanvas().style.cursor = "pointer";
+            });
+          });
+        });
+      }
+      map.on("click", function (e) {
+        var features = map.queryRenderedFeatures(e.point, {
+          layers: ["Inspectors"] // replace this with the name of the layer
+        });
 
-        map.on("mousemove", "CDNAME", function(e) {
-            popup.setHTML(
-              "<p>" +
-                "Census Division:  " +
-                e.features[0].properties.CDNAME +
-                "</p>"
-            );
-            if (e.features.length > 0) {
-              censusname.textContent = e.features[0].properties.CDNAME;
+        if (!features.length) {
+          return;
+        }
+
+        var feature = features[0];
+
+        var popup = new mapboxgl.Popup({ offset: [0, -15] })
+          .setLngLat(feature.geometry.coordinates)
+          .setHTML(feature.properties.Name)
+          .addTo(map);
+      });
+      map.on("mousemove", "CDNAME", cdname);
+      map.on("mousemove", "CDNAME", CDmouse);
+
+      var el = document.getElementById("Regions");
+      function switchLayer(layer) {
+        var layerId = layer.target.id;
+        if (layerId == "Interim") {
+          map.setPaintProperty("east", "fill-opacity", 0);
+          map.setPaintProperty("west", "fill-opacity", 0);
+          map.setPaintProperty("north", "fill-opacity", 0);
+          map.setPaintProperty("central", "fill-opacity", 0);
+          map.setPaintProperty("HSD", "fill-opacity", 0);
+          map.setPaintProperty("InterimLayer", "fill-opacity", 0.7);
+          map.off("mousemove", "CDNAME", cdname);
+          map.off("mousemove", "CDNAME", CDmouse);
+          map.on("mousemove", "InterimLayer", munname);
+          map.on("mousemove", "InterimLayer", MUNmouse);
+          map.removeLayer("Inspectors");
+          el.style.display = "none";
+          xx.style.display = "block";
+        } else if (layerId == "Current") {
+          map.setPaintProperty("east", "fill-opacity", 0.7);
+          map.setPaintProperty("west", "fill-opacity", 0.7);
+          map.setPaintProperty("north", "fill-opacity", 0.7);
+          map.setPaintProperty("central", "fill-opacity", 0.7);
+          map.setPaintProperty("HSD", "fill-opacity", 0.7);
+          map.setPaintProperty("InterimLayer", "fill-opacity", 0);
+          map.addLayer({
+            id: "Inspectors",
+            type: "circle",
+            source: "Locations",
+            paint: {
+              "circle-color": "#000000",
+              "circle-radius": 4,
+              "circle-stroke-width": 1
             }
           });
-      });
+          xx.style.display = "none";
+          el.style.display = "block";
+          map.on("mousemove", "CDNAME", cdname);
+        }
+      }
+
+      for (var i = 0; i < inputs.length; i++) {
+        inputs[i].onclick = switchLayer;
+      }
+
+      function switchType(layer) {
+        var layerId = layer.target.id;
+        if (layerId == "Interactive") {
+          zz.style.display = "block";
+          map.addControl(geocoder);
+          map.addControl(navigation);
+        } else if (layerId == "Screenshot") {
+          zz.style.display = "none";
+          map.removeControl(geocoder);
+          map.removeControl(navigation);
+        }
+      }
+      for (var k = 0; k < inputs2.length; k++) {
+        inputs2[k].onclick = switchType;
+      }
     </script>
   </body>
 </html>
